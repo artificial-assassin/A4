@@ -1,16 +1,19 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <list>
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
 
+#ifndef STARTUP_CODE_CPP
+	#define STARTUP_CODE_CPP
+
+class network;
 
 // Format checker just assumes you have Alarm.bif and Solved_Alarm.bif (your file) in current directory
 using namespace std;
 
-// Our graph consists of a list of nodes where each node is represented as follows:
+// Our graph consists of a vector of nodes where each node is represented as follows:
 class Graph_Node{
 
 private:
@@ -77,18 +80,21 @@ public:
         Children.push_back(new_child_index);
         return 1;
     }
-
-
+	
+	void print_node(network& N);
 
 };
 
 
- // The whole network represted as a list of nodes
+ // The whole network represted as a vector of nodes
 class network{
 
-	list <Graph_Node> Pres_Graph;
+	vector<Graph_Node> Pres_Graph;
 
 public:
+	
+	vector<vector<string> > data_set;
+	
 	int addNode(Graph_Node node)
 	{
 		Pres_Graph.push_back(node);
@@ -103,52 +109,57 @@ public:
     // get the index of node with a given name
     int get_index(string val_name)
     {
-        list<Graph_Node>::iterator listIt;
+        vector<Graph_Node>::iterator it;
         int count=0;
-        for(listIt=Pres_Graph.begin();listIt!=Pres_Graph.end();listIt++)
+        for(it=Pres_Graph.begin();it!=Pres_Graph.end();it++)
         {
-            if(listIt->get_name().compare(val_name)==0)
+            if(it->get_name().compare(val_name)==0)
                 return count;
             count++;
         }
         return -1;
     }
 // get the node at nth index
-    list<Graph_Node>::iterator get_nth_node(int n)
+    vector<Graph_Node>::iterator get_nth_node_iter(int n)
     {
-       list<Graph_Node>::iterator listIt;
+       vector<Graph_Node>::iterator it;
         int count=0;
-        for(listIt=Pres_Graph.begin();listIt!=Pres_Graph.end();listIt++)
+        for(it=Pres_Graph.begin();it!=Pres_Graph.end();it++)
         {
-            if(count==n)
-                return listIt;
+            if(count==n) return it;
+			
             count++;
         }
-        return listIt; 
+		
+        return it; 
     }
+	
+	Graph_Node& get_nth_node(int n) 
+		{ return Pres_Graph[n];	}
+	
     //get the iterator of a node with a given name
-    list<Graph_Node>::iterator search_node(string val_name)
+    vector<Graph_Node>::iterator search_node(string val_name)
     {
-        list<Graph_Node>::iterator listIt;
-        for(listIt=Pres_Graph.begin();listIt!=Pres_Graph.end();listIt++)
+        vector<Graph_Node>::iterator it;
+        for(it=Pres_Graph.begin();it!=Pres_Graph.end();it++)
         {
-            if(listIt->get_name().compare(val_name)==0)
-                return listIt;
+            if(it->get_name().compare(val_name)==0)
+                return it;
         }
     
             cout<<"node not found\n";
-        return listIt;
+        return it;
     }
 	
 
 };
 
-network read_network()
+network read_network(string fname)
 {
 	network Alarm;
 	string line;
 	int find=0;
-  	ifstream myfile("alarm.bif"); 
+  	ifstream myfile(fname); 
   	string temp;
   	string name;
   	vector<string> values;
@@ -198,22 +209,22 @@ network read_network()
      				ss>>temp;
      				ss>>temp;
      				
-                    list<Graph_Node>::iterator listIt;
-                    list<Graph_Node>::iterator listIt1;
-     				listIt=Alarm.search_node(temp);
+                    vector<Graph_Node>::iterator it;
+                    vector<Graph_Node>::iterator it1;
+     				it=Alarm.search_node(temp);
                     int index=Alarm.get_index(temp);
                     ss>>temp;
                     values.clear();
      				while(temp.compare(")")!=0)
      				{
-                        listIt1=Alarm.search_node(temp);
-                        listIt1->add_child(index);
+                        it1=Alarm.search_node(temp);
+                        it1->add_child(index);
      					values.push_back(temp);
      					
      					ss>>temp;
 
     				}
-                    listIt->set_Parents(values);
+                    it->set_Parents(values);
     				getline (myfile,line);
      				stringstream ss2;
                     
@@ -235,7 +246,7 @@ network read_network()
 
     				}
                     
-                    listIt->set_CPT(curr_CPT);
+                    it->set_CPT(curr_CPT);
 
 
      		}
@@ -257,16 +268,68 @@ network read_network()
   	return Alarm;
 }
 
-
-int main()
+void get_data(network& N, string fname)
 {
-	network Alarm;
-	Alarm=read_network();
-    
-// Example: to do something
-	cout<<"Perfect! Hurrah! \n";
+	string line;
+	ifstream myfile(fname); 
+	int i = 0;
+	
+	while(getline(myfile,line))
+	{		
+	    N.data_set.push_back(vector<string>(N.netSize()));
+		
+		istringstream iss(line);
+		string val;
+
+		for (int j = 0 ; j < N.netSize() ; j++)
+		{
+			iss >> val;
+			N.data_set[i][j] = val;
+		}
+		
+		i++;
+	}
+	
+	// cout << "data_set size : " << N.data_set.size() << "\n";
+	//
+	// for (int i = 0 ; i < N.netSize() ; i++)
+	// 	cout << N.data_set[0][i] << " ";
+	// cout << endl;
 	
 }
+
+void Graph_Node::print_node(network& N)
+{
+	cout << "----------------------------------------\n";
+	cout << "[] -- no. of categories   |    () -- index in network \n";
+	cout << "Node Name : " << Node_Name << "\n";
+	cout << "nvalues   : " << nvalues << "\n";
+	cout << "parents   : ";
+	
+	for (vector<string>::iterator it = Parents.begin() ; it != Parents.end() ; it++)
+		cout << *it << "[" << N.search_node(*it)->get_nvalues() << "] ";
+	cout << "\n";
+	
+	cout << "values    : ";
+	for (vector<string>::iterator it = values.begin() ; it != values.end() ; it++)
+		cout << *it << " ";
+	cout << "\n";
+	
+	cout << "CPT       : ";
+	for (vector<float>::iterator it = CPT.begin() ; it != CPT.end() ; it++)
+		cout << *it << " ";
+	cout << "\n";
+	
+	cout << "children  : ";	
+	for (int i = 0 ; i < Children.size() ; i++)
+		cout << N.get_nth_node(Children[i]).get_name() << "[" << N.get_nth_node(Children[i]).get_nvalues() << "](" << Children[i] << ") ";
+	cout << "\n";
+	
+	cout << "----------------------------------------\n";	
+	
+}
+
+#endif
 
 
 
