@@ -134,7 +134,7 @@ public:
         return it; 
     }
 	
-	Graph_Node& get_nth_node(int n) 
+	Graph_Node& get_nth_node(int n) 			 // SNair
 		{ return Pres_Graph[n];	}
 	
     //get the iterator of a node with a given name
@@ -268,7 +268,7 @@ network read_network(string fname)
   	return Alarm;
 }
 
-void get_data(network& N, string fname)
+void get_data(network& N, string fname)						// SNair
 {
 	string line;
 	ifstream myfile(fname); 
@@ -298,7 +298,7 @@ void get_data(network& N, string fname)
 	
 }
 
-void Graph_Node::print_node(network& N)
+void Graph_Node::print_node(network& N)							// SNair
 {
 	cout << "----------------------------------------\n";
 	cout << "[] -- no. of categories   |    () -- index in network \n";
