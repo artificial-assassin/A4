@@ -3,6 +3,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <cmath>
 #include <cstdlib>
 
 #ifndef STARTUP_CODE_CPP
@@ -26,13 +27,18 @@ private:
 
 public:
 	// Constructor- a node is initialised with its name and its categories
-    Graph_Node(string name,int n,vector<string> vals)
+	
+	vector<int> parents_int;		// SNair
+	int node_number;				// index in network
+	
+    Graph_Node(string name,int n,vector<string> vals, int ind)
 	{
 		Node_Name=name;
 	
 		nvalues=n;
 		values=vals;
 		
+		node_number = ind;
 
 	}
 	string get_name()
@@ -94,6 +100,7 @@ class network{
 public:
 	
 	vector<vector<string> > data_set;
+	void init();
 	
 	int addNode(Graph_Node node)
 	{
@@ -163,6 +170,7 @@ network read_network(string fname)
   	string temp;
   	string name;
   	vector<string> values;
+	int node_number = 0;
   	
     if (myfile.is_open())
     {
@@ -198,7 +206,8 @@ network read_network(string fname)
      					
      					ss2>>temp;
     				}
-     				Graph_Node new_node(name,values.size(),values);
+     				Graph_Node new_node(name,values.size(),values,node_number);
+					node_number++;
      				int pos=Alarm.addNode(new_node);
 
      				
@@ -268,12 +277,31 @@ network read_network(string fname)
   	return Alarm;
 }
 
+void network::init()			// SNair
+{
+	// initialise parents_int
+	
+	for (int i = 0 ; i<Pres_Graph.size() ; i++)
+	{
+		vector<string> cur_par = get_nth_node(i).get_Parents();
+		
+		//cout <<  i << ": ";
+		for (int j = 0 ; j<cur_par.size(); j++)
+		{
+			get_nth_node(i).parents_int.push_back((search_node(cur_par[j]))->node_number);
+		//	cout << cur_node.parents_int[j] << " ";
+		}
+		//cout << "\n";
+		
+	}
+}
+
 void get_data(network& N, string fname)						// SNair
 {
 	string line;
 	ifstream myfile(fname); 
 	int i = 0;
-	
+ 
 	while(getline(myfile,line))
 	{		
 	    N.data_set.push_back(vector<string>(N.netSize()));
@@ -302,12 +330,13 @@ void Graph_Node::print_node(network& N)							// SNair
 {
 	cout << "----------------------------------------\n";
 	cout << "[] -- no. of categories   |    () -- index in network \n";
+	cout << "Node No   : " << node_number << "\n";
 	cout << "Node Name : " << Node_Name << "\n";
 	cout << "nvalues   : " << nvalues << "\n";
 	cout << "parents   : ";
-	
-	for (vector<string>::iterator it = Parents.begin() ; it != Parents.end() ; it++)
-		cout << *it << "[" << N.search_node(*it)->get_nvalues() << "] ";
+
+	for (int i = 0 ; i<parents_int.size() ; i++)
+		cout << N.get_nth_node(parents_int[i]).get_name() << "[" << N.get_nth_node(parents_int[i]).get_nvalues() << "](" << parents_int[i] << ") ";
 	cout << "\n";
 	
 	cout << "values    : ";
@@ -327,6 +356,23 @@ void Graph_Node::print_node(network& N)							// SNair
 	
 	cout << "----------------------------------------\n";	
 	
+}
+
+double learn_error(network& lhs, network& rhs)			// SNair
+{
+	// assumes same network and ordering
+	double error = 0.0;
+	
+	for (int i = 0 ; i<lhs.netSize() ; i++)
+	{
+		vector<float> l = lhs.get_nth_node(i).get_CPT();
+		vector<float> r = rhs.get_nth_node(i).get_CPT();
+		
+		for (int j = 0 ; j<l.size() ; j++)
+			error += fabs(r[j]-l[j]);
+	}
+	
+	return 10.0*error;
 }
 
 #endif
