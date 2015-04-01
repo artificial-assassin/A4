@@ -30,7 +30,8 @@ int main(int argc, char** argv)
 	temp = Alarm.get_nth_node(1);
 	temp.print_node(Alarm);
 	
-	solve_network(Alarm);
+	//solve_network(Alarm);
+	count_CPT(Alarm);
 	
 	// for error metric
 	if (argc == 4)

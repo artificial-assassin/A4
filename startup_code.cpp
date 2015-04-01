@@ -23,7 +23,7 @@ private:
 	vector<string> Parents; // Parents of a particular node- note these are names of parents
 	int nvalues;  // Number of categories a variable represented by this node can take
 	vector<string> values; // Categories of possible values
-	vector<float> CPT; // conditional probability table as a 1-d array . Look for BIF format to understand its meaning
+	vector<double> CPT; // conditional probability table as a 1-d array . Look for BIF format to understand its meaning
 
 public:
 	// Constructor- a node is initialised with its name and its categories
@@ -53,7 +53,7 @@ public:
 	{
 		return Parents;
 	}
-	vector<float> get_CPT()
+	vector<double> get_CPT()
 	{
 		return CPT;
 	}
@@ -65,7 +65,7 @@ public:
 	{
 		return values;
 	}
-	void set_CPT(vector<float> new_CPT)
+	void set_CPT(vector<double> new_CPT)
 	{
 		CPT.clear();
 		CPT=new_CPT;
@@ -242,7 +242,7 @@ network read_network(string fname)
                     
      				ss2>> temp;
                     
-     				vector<float> curr_CPT;
+     				vector<double> curr_CPT;
                     string::size_type sz;
      				while(temp.compare(";")!=0)
      				{
@@ -345,7 +345,7 @@ void Graph_Node::print_node(network& N)							// SNair
 	cout << "\n";
 	
 	cout << "CPT       : ";
-	for (vector<float>::iterator it = CPT.begin() ; it != CPT.end() ; it++)
+	for (vector<double>::iterator it = CPT.begin() ; it != CPT.end() ; it++)
 		cout << *it << " ";
 	cout << "\n";
 	
@@ -365,8 +365,8 @@ double learn_error(network& lhs, network& rhs)			// SNair
 	
 	for (int i = 0 ; i<lhs.netSize() ; i++)
 	{
-		vector<float> l = lhs.get_nth_node(i).get_CPT();
-		vector<float> r = rhs.get_nth_node(i).get_CPT();
+		vector<double> l = lhs.get_nth_node(i).get_CPT();
+		vector<double> r = rhs.get_nth_node(i).get_CPT();
 		
 		for (int j = 0 ; j<l.size() ; j++)
 			error += fabs(r[j]-l[j]);
