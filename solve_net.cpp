@@ -1,4 +1,5 @@
 #include "startup_code.cpp"
+#include "em.cpp"
 
 #ifndef SOLVE_NET_CPP
 	#define SOLVE_NET_CPP
@@ -104,7 +105,8 @@ void count_CPT(network& N)		// generates CPT by basic counting
 
 void solve_network(network& N)
 {
-	
+	count_CPT(N);
+	exp_max(N,0.00001);
 }
 
 #endif

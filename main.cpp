@@ -4,6 +4,8 @@
 
 int main(int argc, char** argv)
 {
+	srand(time(NULL));
+	
 	if (!(argc == 3 or argc == 4))
 	{
 		cout << "./startup_code alarm.bif data.dat {gold.bif}\n";
@@ -28,13 +30,10 @@ int main(int argc, char** argv)
 	temp = Alarm.get_nth_node(0);
 	temp.print_node(Alarm);
 
-	temp = Alarm.get_nth_node(10);
+	temp = Alarm.get_nth_node(1);
 	temp.print_node(Alarm);
 		
-	//solve_network(Alarm);
-	count_CPT(Alarm);
-
-	markov_blanket(Alarm, 10);
+	solve_network(Alarm);
 	
 	// for error metric
 	if (argc == 4)

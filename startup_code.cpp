@@ -65,6 +65,13 @@ public:
 	{
 		return values;
 	}
+	int get_index_value(string s)
+	{
+		for (int i = 0 ; i<values.size() ; i++)
+			if (values[i] == s) return i;
+		
+		cout << s << " : no such value in " << Node_Name << "\n";
+	}
 	void set_CPT(vector<double> new_CPT)
 	{
 		CPT.clear();
