@@ -100,6 +100,7 @@ class network{
 public:
 	
 	vector<vector<string> > data_set;
+	vector<int> missing_value;				// index of missing value in each data point
 	void init();
 	
 	int addNode(Graph_Node node)
@@ -291,9 +292,29 @@ void network::init()			// SNair
 			get_nth_node(i).parents_int.push_back((search_node(cur_par[j]))->node_number);
 		//	cout << cur_node.parents_int[j] << " ";
 		}
-		//cout << "\n";
-		
+		//cout << "\n";	
 	}
+	
+	for (int i = 0 ; i<data_set.size() ; i++)
+	{
+		bool flag = false;
+		
+		for (int j = 0 ; j<Pres_Graph.size() ; j++)
+		{
+			if (data_set[i][j] == "\"?\"")
+			{
+				missing_value.push_back(j);
+				flag = true;
+				break;
+			}
+		}
+		
+		if (!flag) missing_value.push_back(-1);
+	}
+	
+	// for (int i = 0 ; i<data_set.size() ; i++)
+	// 	cout << missing_value[i] << " ";
+	// cout << "\n";
 }
 
 void get_data(network& N, string fname)						// SNair

@@ -104,18 +104,6 @@ void count_CPT(network& N)		// generates CPT by basic counting
 
 void solve_network(network& N)
 {
-	// vector<int> temp = {0,0,0};
-	// vector<double> cur;
-	//
-	// cur = count_prob(N,N.search_node("\"HRSat\"")->node_number,temp);
-	// double sum = 0;
-	//
-	// for (int i = 0 ; i<cur.size() ; i++)
-	// {
-	// 	sum += cur[i];
-	// 	cout << cur[i] << " ";
-	// }
-	// cout << sum << "\n";
 	
 }
 

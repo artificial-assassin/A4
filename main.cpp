@@ -1,5 +1,6 @@
 #include "startup_code.cpp"
 #include "solve_net.cpp"
+#include "em.cpp"
 
 int main(int argc, char** argv)
 {
@@ -10,8 +11,8 @@ int main(int argc, char** argv)
 	}
 
 	network Alarm;
-	Alarm = read_network(argv[1]); Alarm.init();
-	get_data(Alarm,argv[2]);
+	Alarm = read_network(argv[1]); 
+	get_data(Alarm,argv[2]); Alarm.init();
 	
 //	----------- ^ initialized ^ -----------------
 
@@ -39,6 +40,6 @@ int main(int argc, char** argv)
 		network Gold;
 		Gold = read_network(argv[3]);
 		
-		cout << "Learing error : " << learn_error(Alarm,Gold) << "\n";		
+		cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
 	}
 }
