@@ -1,6 +1,11 @@
 #include "startup_code.cpp"
-#include "solve_net.cpp"
 #include "em.cpp"
+#include "solve_net.cpp"
+
+void solve_network(network& N, network& Gold)
+{
+	exp_max(N,0.00001,Gold);
+}
 
 int main(int argc, char** argv)
 {
@@ -24,16 +29,14 @@ int main(int argc, char** argv)
 	// Graph_Node temp = *Alarm.search_node("\"HRBP\"");
 	// temp.print_node(Alarm);
 
-	Graph_Node temp = *Alarm.search_node("\"Press\"");
-	temp.print_node(Alarm);
-	
-	temp = Alarm.get_nth_node(0);
-	temp.print_node(Alarm);
-
-	temp = Alarm.get_nth_node(1);
-	temp.print_node(Alarm);
-		
-	solve_network(Alarm);
+	// Graph_Node temp = *Alarm.search_node("\"Press\"");
+	// temp.print_node(Alarm);
+	//
+	// temp = Alarm.get_nth_node(0);
+	// temp.print_node(Alarm);
+	//
+	// temp = Alarm.get_nth_node(1);
+	// temp.print_node(Alarm);
 	
 	// for error metric
 	if (argc == 4)
@@ -41,6 +44,10 @@ int main(int argc, char** argv)
 		network Gold;
 		Gold = read_network(argv[3]);
 		
-		cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
+		while (true){
+		solve_network(Alarm,Gold);}
+		//cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
 	}
+	
+
 }

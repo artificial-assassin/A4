@@ -1,4 +1,6 @@
 #include "startup_code.cpp"
+#include "solve_net.cpp"
+#include "prints.cpp"
 
 #ifndef EM_CPP
 	#define EM_CPP
@@ -9,16 +11,17 @@ void expectation(network& N, const vector<vector<double> >& CPT, vector<vector<d
 void maximization(network& N, vector<vector<double> >& CPT, const vector<vector<double> >& missing);
 
 // helpers
-bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon);
-void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor);
+bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode);
+void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int mode);
 vector<double> fill_missing(int i, network& N, const vector<vector<double> >& CPT);
 double prob_x_given_mb(int n, int i, int j, network& N, const vector<vector<double> >& CPT);
 double fetch_from_CPT(int n, int j, network& N, const vector<vector<double> >& CPT, const vector<int> par_values);
+double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing);
 //vector<vector<int> > markov_blanket(network& N, int n);						// returns indices of elements in Markov Blanket of node n, refer function details
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
 
-vector<vector<double> > exp_max(network& N , double epsilon)	// assumes initial basic counting CPT has been called
+vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// assumes initial basic counting CPT has been called
 {
 	vector<vector<double> > CPT(N.netSize());					// CPT for all nodes
 	vector<vector<double> > missing(N.data_set.size());			// one element for each data point corresponding to missing value
@@ -27,26 +30,35 @@ vector<vector<double> > exp_max(network& N , double epsilon)	// assumes initial 
 		CPT[i] = N.get_nth_node(i).get_CPT();
 	
 	for (int i = 0 ; i<N.data_set.size() ; i++)
-		missing[i] = vector<double>(N.get_nth_node(N.missing_value[i]).get_nvalues() , -1.0);
+		missing[i] = vector<double>(N.get_nth_node(N.missing_value[i]).get_nvalues() , 0.0);
 		
-	randomize_CPT(N,CPT,20.0);		// add some noise, change exact 0.0s and 1.0s	
+	maximization(N,CPT,missing);	// initializes CPT
 
-	while (true)
+	randomize_CPT(N,CPT,20.0,0);		// add some noise, change exact 0.0s and 1.0s	{third parameter x : randomized to 1/x}
+	
+	int loop_count = 0;
+	while (loop_count<10)
 	{
 		vector<vector<double> > prev_CPT = CPT;
 
 		expectation(N,CPT,missing);
-		// maximization(N,CPT,missing);
+		maximization(N,CPT,missing);
 		
-		for (int i = 0 ; i<missing.size() ; i++)
-		{
-			for (int j = 0 ; j<missing[i].size() ; j++)
-				cout << missing[i][j] << " ";
-			cout << "\n";
-		}
+	//	print_CPT(CPT);
+		randomize_CPT(N,CPT,20.0,1);		// takes care only of -1.0 , 0.0 and 1.0
+	//	print_CPT(CPT);
+		//print_missing(missing);
 		
-		if (it_is_a_converge(prev_CPT,CPT,epsilon)) return CPT;		// Dharamaraja reference
+		N.set_CPT(CPT);
+		cout << "P(D/h)         : " << prob_data_given_hyp(N,CPT,missing) << "\n";
+		cout << "Learning error : " << learn_error(N,Gold) << "\n";		
+		
+		//if (loop_count%10==0) print_CPT(CPT);
+		if (it_is_a_converge(prev_CPT,CPT,epsilon,1)) return CPT;		// Dharamaraja reference
+		loop_count++;
 	}
+	
+	return CPT;
 }
 
 void expectation(network& N, const vector<vector<double> >& CPT, vector<vector<double> >& missing)
@@ -57,14 +69,43 @@ void expectation(network& N, const vector<vector<double> >& CPT, vector<vector<d
 
 void maximization(network& N, vector<vector<double> >& CPT, const vector<vector<double> >& missing)
 {
-	
+	count_CPT(N,CPT,missing);
 }
 
 /*-----------------------------------------------------      HELPERS       --------------------------------------------------------*/
 
-bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon)
-{
-	return true;
+bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode)		// mode 0 -- normal mode 
+{																													// mode 1 -- diagnostic mode
+	bool flag = true;
+	double max_diff = 0.0;
+	
+	if (mode == 0)	
+	{	
+		for (int i = 0 ; i<CPT.size() ; i++)
+			for (int j = 0 ; j<CPT[i].size() ; j++)
+				if (fabs(prev_CPT[i][j]-CPT[i][j])>epsilon) return false;
+	}
+
+	else 
+	{
+		double total_diff = 0.0;
+		
+		for (int i = 0 ; i<CPT.size() ; i++)
+			for (int j = 0 ; j<CPT[i].size() ; j++)
+			{	
+				total_diff += fabs(prev_CPT[i][j]-CPT[i][j]);
+				if (fabs(prev_CPT[i][j]-CPT[i][j])>epsilon) 
+				{
+					flag = false;
+					if (fabs(prev_CPT[i][j]-CPT[i][j]) > max_diff) max_diff = fabs(prev_CPT[i][j]-CPT[i][j]);
+				}
+			}
+				
+		cout << "Max difference from last CPT values    : " << max_diff << "\n";
+		cout << "Sum of difference from last CPT values : " << total_diff << "\n";
+	}
+	
+	return flag;
 }
 
 vector<double> fill_missing(int i, network& N, const vector<vector<double> >& CPT)
@@ -146,7 +187,7 @@ double fetch_from_CPT(int n, int j, network& N, const vector<vector<double> >& C
 		multiplier *= N.get_nth_node(cur.parents_int[j]).get_nvalues();
 	}
 	
-	//cout << "herehehrehre : " << CPT[n][(j*(CPT[n].size()/cur.get_nvalues()))+count] << "\n";
+	//cout << "here : " << CPT[n][(j*(CPT[n].size()/cur.get_nvalues()))+count] << "\n";
 	return CPT[n][(j*(CPT[n].size()/cur.get_nvalues()))+count];	
 }
 
@@ -169,7 +210,7 @@ void normalize_CPT(network& N, vector<vector<double> >& CPT)
 	}
 }
 
-void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor)
+void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int mode)	// mode 0 -- for initial randomisation , mode 1 -- for settings -1.0,0.0,1.0
 {
 	// cout << "--------BEFORE ADDING NOISE-----------\n";
 	// for (int i = 0 ; i<CPT.size() ; i++)
@@ -190,8 +231,18 @@ void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor)
 			
 			else 
 			{
-				if (rand()%2 == 1) CPT[i][j] = CPT[i][j]+(((double) rand() / (RAND_MAX))/factor);
-				else CPT[i][j] = fabs(CPT[i][j]-(((double) rand() / (RAND_MAX))/factor));
+				if (mode == 0)
+				{
+					if (rand()%2 == 1) CPT[i][j] = CPT[i][j]+(((double) rand() / (RAND_MAX))/factor);
+					else CPT[i][j] = fabs(CPT[i][j]-(((double) rand() / (RAND_MAX))/factor));
+				}
+				
+				if (mode == 1)
+				{
+					if (CPT[i][j] == 1.0)  CPT[i][j] = 0.99;
+					if (CPT[i][j] == 0.0)  CPT[i][j] = 0.01;
+					if (CPT[i][j] == -1.0) CPT[i][j] = 1;		// gets normalized
+				}				
 			}
 		}
 		
@@ -205,6 +256,41 @@ void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor)
 	// 	cout << "\n";
 	// }
 	// cout << "\n";
+}
+
+double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing)
+{
+	double prob = 0;
+	
+	for (int i = 0 ; i<N.data_set.size() ; i++)
+	{
+		int n = N.missing_value[i];
+		
+		int max_index = 0; 
+		for (int j = 1 ; j<missing[i].size() ; j++)
+			if (missing[i][j] > missing[i][max_index]) max_index = j;
+		
+		N.data_set[i][n] = N.get_nth_node(n).get_values()[max_index];
+		
+		
+		//---------- ^ set highest probability value for "?"  ^ ----------//
+		
+		for (int k = 0 ; k<N.netSize() ; k++)
+		{
+			vector<int> par_values;
+			for (int x = 0 ; x<N.get_nth_node(k).parents_int.size() ; x++)
+			{		
+				int cur = N.get_nth_node(k).parents_int[x];
+				par_values.push_back(value_index_from_data(N,i,cur));
+			}
+			
+			prob += log(1.29*fetch_from_CPT(k,value_index_from_data(N,i,k),N,CPT,par_values));
+		}	
+		
+		N.data_set[i][n] = "\"?\"";		
+	}
+	
+	return prob;
 }
 
 

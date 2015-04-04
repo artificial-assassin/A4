@@ -71,6 +71,7 @@ public:
 			if (values[i] == s) return i;
 		
 		cout << s << " : no such value in " << Node_Name << "\n";
+		return -1;
 	}
 	void set_CPT(vector<double> new_CPT)
 	{
@@ -166,6 +167,11 @@ public:
         return it;
     }
 	
+	void set_CPT(vector<vector<double> >& CPT)
+	{
+		for (int i = 0 ; i<CPT.size() ; i++)
+			get_nth_node(i).set_CPT(CPT[i]);
+	}
 
 };
 
