@@ -11,7 +11,7 @@ void expectation(network& N, const vector<vector<double> >& CPT, vector<vector<d
 void maximization(network& N, vector<vector<double> >& CPT, const vector<vector<double> >& missing);
 
 // helpers
-bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode);
+bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode, network& Gold);
 void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int mode);
 vector<double> fill_missing(int i, network& N, const vector<vector<double> >& CPT);
 double prob_x_given_mb(int n, int i, int j, network& N, const vector<vector<double> >& CPT);
@@ -37,7 +37,7 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 	randomize_CPT(N,CPT,20.0,0);		// add some noise, change exact 0.0s and 1.0s	{third parameter x : randomized to 1/x}
 	
 	int loop_count = 0;
-	while (loop_count<10)
+	while (loop_count<50)
 	{
 		vector<vector<double> > prev_CPT = CPT;
 
@@ -54,7 +54,7 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 		cout << "Learning error : " << learn_error(N,Gold) << "\n";		
 		
 		//if (loop_count%10==0) print_CPT(CPT);
-		if (it_is_a_converge(prev_CPT,CPT,epsilon,1)) return CPT;		// Dharamaraja reference
+		if (it_is_a_converge(prev_CPT,CPT,epsilon,1,Gold)) return CPT;		// Dharamaraja reference
 		loop_count++;
 	}
 	
@@ -64,7 +64,8 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 void expectation(network& N, const vector<vector<double> >& CPT, vector<vector<double> >& missing)
 {
 	for (int i = 0 ; i<N.data_set.size() ; i++)
-		missing[i] = fill_missing(i,N,CPT);	
+		if (N.has_missing[i])
+			missing[i] = fill_missing(i,N,CPT);	
 }
 
 void maximization(network& N, vector<vector<double> >& CPT, const vector<vector<double> >& missing)
@@ -74,10 +75,9 @@ void maximization(network& N, vector<vector<double> >& CPT, const vector<vector<
 
 /*-----------------------------------------------------      HELPERS       --------------------------------------------------------*/
 
-bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode)		// mode 0 -- normal mode 
-{																													// mode 1 -- diagnostic mode
+bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> > CPT, double epsilon, int mode, network& Gold)		// mode 0 -- normal mode 
+{																																	// mode 1 -- diagnostic mode
 	bool flag = true;
-	double max_diff = 0.0;
 	
 	if (mode == 0)	
 	{	
@@ -88,7 +88,11 @@ bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> >
 
 	else 
 	{
+		double max_diff = 0.0;
+		pair<int,int> max_diff_index = pair<int,int>(0,0);
 		double total_diff = 0.0;
+		int excess_count = 0;
+		int residual = 0;
 		
 		for (int i = 0 ; i<CPT.size() ; i++)
 			for (int j = 0 ; j<CPT[i].size() ; j++)
@@ -97,11 +101,26 @@ bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> >
 				if (fabs(prev_CPT[i][j]-CPT[i][j])>epsilon) 
 				{
 					flag = false;
-					if (fabs(prev_CPT[i][j]-CPT[i][j]) > max_diff) max_diff = fabs(prev_CPT[i][j]-CPT[i][j]);
+					if (fabs(prev_CPT[i][j]-CPT[i][j]) > max_diff) 
+						{
+							max_diff = fabs(prev_CPT[i][j]-CPT[i][j]);
+							max_diff_index = pair<int,int>(i,j);
+						}
+				
+					residual++;
 				}
+				
+				if (fabs(CPT[i][j]-Gold.get_nth_node(i).get_CPT()[j])>epsilon) 
+					{
+						excess_count++; 
+						//cout << CPT[i][j] << " " << Gold.get_nth_node(i).get_CPT()[j] << "\n";
+					}
 			}
 				
 		cout << "Max difference from last CPT values    : " << max_diff << "\n";
+		cout << "Max difference index                   : " << "(" << max_diff_index.first << "," << max_diff_index.second << ")\n";
+		cout << "No. of differences exceeding epsilon   : " << excess_count << " (from gold values, epsilon = " << epsilon << ")\n";
+		cout << "Last CPT values diff exceeding epsilon : " << residual << "\n";
 		cout << "Sum of difference from last CPT values : " << total_diff << "\n";
 	}
 	
@@ -117,14 +136,14 @@ vector<double> fill_missing(int i, network& N, const vector<vector<double> >& CP
 	
 	// when applying Bayes, prob of parents and parents of children will cancel in the numerator and denominator
 	// prob_j_given_mb returns product of remaining probabilities
-	
-	for (int x = 0 ; x<missing.size() ; x++)
-		missing[x] = prob_x_given_mb(n,i,x,N,CPT);		// nth node, ith data point, xth nvalue
-	
+
 	double total = 0.0;
 	
 	for (int x = 0 ; x<missing.size() ; x++)
-		total += missing[x];
+	{
+		missing[x] = prob_x_given_mb(n,i,x,N,CPT);		// nth node, ith data point, xth nvalue
+		total	  += missing[x];
+	}
 	
 	for (int x = 0 ; x<missing.size() ; x++)
 		missing[x] /= total;
@@ -210,16 +229,10 @@ void normalize_CPT(network& N, vector<vector<double> >& CPT)
 	}
 }
 
-void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int mode)	// mode 0 -- for initial randomisation , mode 1 -- for settings -1.0,0.0,1.0
+void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int mode)	// mode 0 -- for initial randomisation , mode 1 -- for setting -1.0,0.0,1.0
 {
 	// cout << "--------BEFORE ADDING NOISE-----------\n";
-	// for (int i = 0 ; i<CPT.size() ; i++)
-	// {
-	// 	for (int j = 0 ; j<CPT[i].size() ; j++)
-	// 		cout << CPT[i][j] << " ";
-	// 	cout << "\n";
-	// }
-	// cout << "\n";
+	// print_CPT(CPT);
 	
 	for (int i = 0 ; i<CPT.size() ; i++)
 		for (int j = 0 ; j<CPT[i].size() ; j++)
@@ -249,13 +262,7 @@ void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int 
 	normalize_CPT(N,CPT);
 	
 	// cout << "--------AFTER ADDING NOISE-----------\n";
-	// for (int i = 0 ; i<CPT.size() ; i++)
-	// {
-	// 	for (int j = 0 ; j<CPT[i].size() ; j++)
-	// 		cout << CPT[i][j] << " ";
-	// 	cout << "\n";
-	// }
-	// cout << "\n";
+	// print_CPT(CPT);
 }
 
 double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing)

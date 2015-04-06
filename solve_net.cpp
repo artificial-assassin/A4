@@ -86,7 +86,7 @@ vector<double> count_prob(network& N, int node_number, vector<int> v, const vect
 		// cout << "Total such cases : " << total << "\n";
 	
 		if (total == 0) prob = vector<double>(gn.get_nvalues(),-1.0);
-	
+		
 		else 
 			for (int j = 0 ; j<gn.get_nvalues() ; j++)
 				prob[j] /= total;
@@ -106,7 +106,7 @@ vector<int> next_given(network& N, vector<int> given, vector<int> parent_nvalues
 		else return ng;
 	}
 	
-	return ng;
+	return ng;	// Andrew
 }
 
 void count_CPT(network& N, vector<vector<double> >& CPT_in, const vector<vector<double> >& missing)		// generates CPT by counting
