@@ -412,7 +412,7 @@ double learn_error(network& lhs, network& rhs)			// SNair
 			error += fabs(r[j]-l[j]);
 	}
 	
-	return 10.0*error;
+	return error;
 }
 
 #endif

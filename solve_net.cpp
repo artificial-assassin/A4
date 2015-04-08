@@ -83,13 +83,15 @@ vector<double> count_prob(network& N, int node_number, vector<int> v, const vect
 			}		
 		}
 	
-		// cout << "Total such cases : " << total << "\n";
+		cout << "Total such cases : " << total << "\n";
 	
-		if (total == 0) prob = vector<double>(gn.get_nvalues(),-1.0);
+		//if (total == 0) prob = vector<double>(gn.get_nvalues(),-1.0);
 		
-		else 
+		total += 0.01*gn.get_nvalues();				// for Laplace smoothing
+		
+		//else 
 			for (int j = 0 ; j<gn.get_nvalues() ; j++)
-				prob[j] /= total;
+				prob[j] = (prob[j]+0.01)/total;
 	
 		return prob;
 	}

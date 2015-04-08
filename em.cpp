@@ -34,20 +34,23 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 		
 	maximization(N,CPT,missing);	// initializes CPT
 
+	print_CPT(CPT);
 	randomize_CPT(N,CPT,20.0,0);		// add some noise, change exact 0.0s and 1.0s	{third parameter x : randomized to 1/x}
-	
+	print_CPT(CPT);
+	cout << "Learning error : " << learn_error(N,Gold) << "\n";		
 	int loop_count = 0;
 	while (loop_count<50)
 	{
 		vector<vector<double> > prev_CPT = CPT;
 
 		expectation(N,CPT,missing);
+		
+	//	print_missing(missing);
 		maximization(N,CPT,missing);
 		
-	//	print_CPT(CPT);
+		print_CPT(CPT);
 		randomize_CPT(N,CPT,20.0,1);		// takes care only of -1.0 , 0.0 and 1.0
 	//	print_CPT(CPT);
-		//print_missing(missing);
 		
 		N.set_CPT(CPT);
 		cout << "P(D/h)         : " << prob_data_given_hyp(N,CPT,missing) << "\n";
@@ -110,7 +113,7 @@ bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> >
 					residual++;
 				}
 				
-				if (fabs(CPT[i][j]-Gold.get_nth_node(i).get_CPT()[j])>epsilon) 
+				if (fabs(CPT[i][j]-Gold.get_nth_node(i).get_CPT()[j])>0.01) 
 					{
 						excess_count++; 
 						//cout << CPT[i][j] << " " << Gold.get_nth_node(i).get_CPT()[j] << "\n";
@@ -119,11 +122,12 @@ bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> >
 				
 		cout << "Max difference from last CPT values    : " << max_diff << "\n";
 		cout << "Max difference index                   : " << "(" << max_diff_index.first << "," << max_diff_index.second << ")\n";
-		cout << "No. of differences exceeding epsilon   : " << excess_count << " (from gold values, epsilon = " << epsilon << ")\n";
-		cout << "Last CPT values diff exceeding epsilon : " << residual << "\n";
-		cout << "Sum of difference from last CPT values : " << total_diff << "\n";
+		cout << "No. of differences exceeding epsilon   : " << excess_count << " (from gold values, epsilon = " << 0.01 << ")\n";
+		cout << "Last CPT values diff exceeding epsilon : " << residual <<  "(from gold values, epsilon = " << epsilon << ")\n";
+		cout << "Sum of difference from last CPT values : " << total_diff << "\n\n";
 	}
 	
+	if (flag) print_CPT(CPT);
 	return flag;
 }
 
@@ -270,14 +274,19 @@ double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vect
 	double prob = 0;
 	
 	for (int i = 0 ; i<N.data_set.size() ; i++)
-	{
-		int n = N.missing_value[i];
+	{	
+		int n;
 		
-		int max_index = 0; 
-		for (int j = 1 ; j<missing[i].size() ; j++)
-			if (missing[i][j] > missing[i][max_index]) max_index = j;
+		if (N.has_missing[i])
+		{
+			n = N.missing_value[i];
 		
-		N.data_set[i][n] = N.get_nth_node(n).get_values()[max_index];
+			int max_index = 0; 
+			for (int j = 1 ; j<missing[i].size() ; j++)
+				if (missing[i][j] > missing[i][max_index]) max_index = j;
+		
+			N.data_set[i][n] = N.get_nth_node(n).get_values()[max_index];
+		}
 		
 		
 		//---------- ^ set highest probability value for "?"  ^ ----------//
@@ -294,7 +303,7 @@ double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vect
 			prob += log(1.29*fetch_from_CPT(k,value_index_from_data(N,i,k),N,CPT,par_values));
 		}	
 		
-		N.data_set[i][n] = "\"?\"";		
+		if (N.has_missing[i]) N.data_set[i][n] = "\"?\"";		
 	}
 	
 	return prob;

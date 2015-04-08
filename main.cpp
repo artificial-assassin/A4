@@ -4,7 +4,7 @@
 
 void solve_network(network& N, network& Gold)
 {
-	exp_max(N,0.05,Gold);
+	exp_max(N,0.0001,Gold);
 }
 
 int main(int argc, char** argv)

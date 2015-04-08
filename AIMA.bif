@@ -1,0 +1,32 @@
+network "AIMA" { 
+}
+variable  "Earthquake" {
+	type discrete[2] {  "True"  "False" };
+}
+variable  "Burglary" { 
+	type discrete[2] {  "True"  "False" };
+}
+variable  "Alarm" { 
+	type discrete[2] {  "True"  "False" };
+}
+variable  "JohnCalls" { 
+	type discrete[2] {  "True"  "False" };
+}
+variable  "MaryCalls" { 
+	type discrete[2] {  "True"  "False" };
+}
+probability (  "Earthquake" ) { 
+	table 0.02 0.98 ;
+}
+probability (  "Burglary" ) { 
+	table 0.03 0.97 ;
+}
+probability ( "Alarm" "Earthquake" "Burglary" ) {
+	table 0.99 0.9 0.95 0.03 0.01 0.1 0.05 0.97 ;
+}
+probability ( "JohnCalls" "Alarm" ) {
+	table 0.8 0.2 0.2 0.8 ;
+}
+probability ( "MaryCalls" "Alarm" ) {
+	table 0.9 0.3 0.1 0.7 ;
+}
