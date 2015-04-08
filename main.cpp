@@ -11,7 +11,7 @@ int main(int argc, char** argv)
 {
 	srand(time(NULL));
 	
-	if (!(argc == 3 or argc == 4))
+	if (!(argc == 4 or argc == 5))
 	{
 		cout << "./startup_code alarm.bif data.dat {gold.bif}\n";
 		exit(0);
@@ -39,13 +39,14 @@ int main(int argc, char** argv)
 	// temp.print_node(Alarm);
 	
 	// for error metric
-	if (argc == 4)
+	if (argc == 5)
 	{
 		network Gold;
-		Gold = read_network(argv[3]);
+		Gold = read_network(argv[4]);
 		
 		solve_network(Alarm,Gold);
-		//cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
+		print_network(argv[1], argv[3], Alarm);
+		cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
 	}
 	
 
