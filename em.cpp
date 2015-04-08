@@ -37,20 +37,19 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 	print_CPT(CPT);
 	randomize_CPT(N,CPT,20.0,0);		// add some noise, change exact 0.0s and 1.0s	{third parameter x : randomized to 1/x}
 	print_CPT(CPT);
-	cout << "Learning error : " << learn_error(N,Gold) << "\n";		
+	
 	int loop_count = 0;
 	while (loop_count<50)
 	{
 		vector<vector<double> > prev_CPT = CPT;
 
 		expectation(N,CPT,missing);
-		
-	//	print_missing(missing);
 		maximization(N,CPT,missing);
 		
-		print_CPT(CPT);
-		randomize_CPT(N,CPT,20.0,1);		// takes care only of -1.0 , 0.0 and 1.0
 	//	print_CPT(CPT);
+		randomize_CPT(N,CPT,20.0,1);		// takes care only of -1.0 , 0.0 and 1.0
+		print_CPT(CPT);
+	//	print_missing(missing);
 		
 		N.set_CPT(CPT);
 		cout << "P(D/h)         : " << prob_data_given_hyp(N,CPT,missing) << "\n";

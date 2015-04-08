@@ -414,7 +414,7 @@ int main()
     int n;
 
     int current_sample[Alarm.netSize()];
-    for(int i=0;i<500000;i++)
+    for(int i=0;i<20;i++)
     {
         for(int k=0;k<Alarm.netSize();k++)
             current_sample[k]=-1;
@@ -431,7 +431,7 @@ int main()
 
         
         print_sample(current_sample,Alarm);
-        if(i<500000-1)
+        if(i<20-1)
         cout<<"\n";
     }
     

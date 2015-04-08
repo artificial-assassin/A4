@@ -44,8 +44,7 @@ int main(int argc, char** argv)
 		network Gold;
 		Gold = read_network(argv[3]);
 		
-		while (true){
-		solve_network(Alarm,Gold);}
+		solve_network(Alarm,Gold);
 		//cout << "Learning error : " << learn_error(Alarm,Gold) << "\n";		
 	}
 	

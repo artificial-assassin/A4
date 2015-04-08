@@ -83,7 +83,7 @@ vector<double> count_prob(network& N, int node_number, vector<int> v, const vect
 			}		
 		}
 	
-		cout << "Total such cases : " << total << "\n";
+	//	cout << "Total such cases : " << total << "\n";
 	
 		//if (total == 0) prob = vector<double>(gn.get_nvalues(),-1.0);
 		
