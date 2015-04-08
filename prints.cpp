@@ -1,4 +1,5 @@
 #include "startup_code.cpp"
+#include <iomanip>
 
 #ifndef PRINTS_CPP
 	#define PRINTS_CPP
@@ -56,7 +57,6 @@ void print_network(string inputFile, string outputFile, network& solvedAlarm)
      		
      		if(temp.compare("variable")==0)
      		{
-                    
      				ss>>name;
      				getline (myfile,line);
                    	fout << line << "\n";
@@ -67,7 +67,7 @@ void print_network(string inputFile, string outputFile, network& solvedAlarm)
      				{
      					ss2>>temp;	
      				}
-
+					
      				while(temp.compare("};")!=0)
      				{
      					ss2>>temp;
@@ -79,7 +79,11 @@ void print_network(string inputFile, string outputFile, network& solvedAlarm)
      		{
 					vector<double> CPT = solvedAlarm.get_nth_node(pnode_number).get_CPT();
 					fout << "\ttable ";
-					copy(CPT.begin(), CPT.end(), std::ostream_iterator<double>(fout, " "));
+					for(vector<double>::iterator it = CPT.begin(); it != CPT.end(); it++)
+					{
+						//fout << *it << " ";
+						fout << fixed << setprecision(4) << *it << " ";
+					}
 					fout << ";\n";
     				getline (myfile,line);
 					pnode_number++;
