@@ -87,11 +87,11 @@ vector<double> count_prob(network& N, int node_number, vector<int> v, const vect
 	
 		//if (total == 0) prob = vector<double>(gn.get_nvalues(),-1.0);
 		
-		total += 0.01*gn.get_nvalues();				// for Laplace smoothing
+		total += 0.0001*gn.get_nvalues();				// for Laplace smoothing
 		
 		//else 
 			for (int j = 0 ; j<gn.get_nvalues() ; j++)
-				prob[j] = (prob[j]+0.01)/total;
+				prob[j] = (prob[j]+0.0001)/total;
 	
 		return prob;
 	}

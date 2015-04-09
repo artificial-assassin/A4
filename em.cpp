@@ -17,6 +17,7 @@ vector<double> fill_missing(int i, network& N, const vector<vector<double> >& CP
 double prob_x_given_mb(int n, int i, int j, network& N, const vector<vector<double> >& CPT);
 double fetch_from_CPT(int n, int j, network& N, const vector<vector<double> >& CPT, const vector<int> par_values);
 double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing);
+double exact_prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing);
 //vector<vector<int> > markov_blanket(network& N, int n);						// returns indices of elements in Markov Blanket of node n, refer function details
 
 /*--------------------------------------------------------------------------------------------------------------------------------*/
@@ -34,25 +35,26 @@ vector<vector<double> > exp_max(network& N , double epsilon, network& Gold)	// a
 		
 	maximization(N,CPT,missing);	// initializes CPT
 
-	print_CPT(CPT);
+	//print_CPT(CPT);
 	randomize_CPT(N,CPT,20.0,0);		// add some noise, change exact 0.0s and 1.0s	{third parameter x : randomized to 1/x}
-	print_CPT(CPT);
+	//print_CPT(CPT);
 	
 	int loop_count = 0;
 	while (loop_count<50)
 	{
 		vector<vector<double> > prev_CPT = CPT;
 
-		expectation(N,CPT,missing);
+		expectation(N,CPT,missing);		
 		maximization(N,CPT,missing);
 		
+	//	print_missing(missing);
 	//	print_CPT(CPT);
 		randomize_CPT(N,CPT,20.0,1);		// takes care only of -1.0 , 0.0 and 1.0
-		print_CPT(CPT);
-	//	print_missing(missing);
+	//	print_CPT(CPT);
 		
 		N.set_CPT(CPT);
 		cout << "P(D/h)         : " << prob_data_given_hyp(N,CPT,missing) << "\n";
+		cout << "P(D/h) exact   : " << exact_prob_data_given_hyp(N,CPT,missing) << "\n";
 		cout << "Learning error : " << learn_error(N,Gold) << "\n";		
 		
 		//if (loop_count%10==0) print_CPT(CPT);
@@ -121,12 +123,12 @@ bool it_is_a_converge(vector<vector<double> >& prev_CPT, vector<vector<double> >
 				
 		cout << "Max difference from last CPT values    : " << max_diff << "\n";
 		cout << "Max difference index                   : " << "(" << max_diff_index.first << "," << max_diff_index.second << ")\n";
-		cout << "No. of differences exceeding epsilon   : " << excess_count << " (from gold values, epsilon = " << 0.01 << ")\n";
-		cout << "Last CPT values diff exceeding epsilon : " << residual <<  "(from gold values, epsilon = " << epsilon << ")\n";
-		cout << "Sum of difference from last CPT values : " << total_diff << "\n\n";
+		cout << "Last CPT values diff exceeding epsilon : " << residual <<  " (epsilon = " << epsilon << ")\n";
+		cout << "Sum of difference from last CPT values : " << total_diff << "\n";
+		cout << "No. of differences exceeding epsilon   : " << excess_count << " (from gold values, epsilon = " << 0.01 << ")\n\n";
 	}
 	
-	if (flag) print_CPT(CPT);
+	//if (flag) print_CPT(CPT);
 	return flag;
 }
 
@@ -169,9 +171,9 @@ double prob_x_given_mb(int n, int i, int j, network& N, const vector<vector<doub
 		int cur = N.get_nth_node(n).parents_int[x];
 		par_values.push_back(value_index_from_data(N,i,cur));
 	}
-	
+
 	double prob = fetch_from_CPT(n,j,N,CPT,par_values);
-	
+
 //	cout << "P(node) : " << prob << "\n";
 	
 	for (int x = 0 ; x<N.get_nth_node(n).get_children().size() ; x++)
@@ -182,19 +184,18 @@ double prob_x_given_mb(int n, int i, int j, network& N, const vector<vector<doub
 		for (int y = 0 ; y<N.get_nth_node(cur).parents_int.size() ; y++)
 		{
 			int cur_par = N.get_nth_node(cur).parents_int[y];
-			par_values.push_back(value_index_from_data(N,i,cur_par));
+			par_val.push_back(value_index_from_data(N,i,cur_par));
 		}
-		
+
 		prob *= fetch_from_CPT(cur,value_index_from_data(N,i,cur),N,CPT,par_val);
+		
 //		cout << "P(child) : " << prob << "\n";
 	}
 	
 	N.data_set[i][n] = "\"?\"";
 	
-//	cout << "prob x given m : " << prob << "\n";
 	return prob;
 }
-
 
 double fetch_from_CPT(int n, int j, network& N, const vector<vector<double> >& CPT, const vector<int> par_values)
 {
@@ -251,6 +252,7 @@ void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int 
 				{
 					if (rand()%2 == 1) CPT[i][j] = CPT[i][j]+(((double) rand() / (RAND_MAX))/factor);
 					else CPT[i][j] = fabs(CPT[i][j]-(((double) rand() / (RAND_MAX))/factor));
+					//CPT[i][j] = ((double) rand() / (RAND_MAX));
 				}
 				
 				if (mode == 1)
@@ -270,7 +272,7 @@ void randomize_CPT(network& N, vector<vector<double> >& CPT, double factor, int 
 
 double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing)
 {
-	double prob = 0;
+	double prob = 0.0;
 	
 	for (int i = 0 ; i<N.data_set.size() ; i++)
 	{	
@@ -299,13 +301,56 @@ double prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vect
 				par_values.push_back(value_index_from_data(N,i,cur));
 			}
 			
-			prob += log(1.29*fetch_from_CPT(k,value_index_from_data(N,i,k),N,CPT,par_values));
+			prob += log(fetch_from_CPT(k,value_index_from_data(N,i,k),N,CPT,par_values));
 		}	
 		
 		if (N.has_missing[i]) N.data_set[i][n] = "\"?\"";		
 	}
 	
 	return prob;
+}
+
+double exact_prob_data_given_hyp(network& N, vector<vector<double> >& CPT, vector<vector<double> >& missing)
+{
+	double prob = 0.0;
+	
+	for (int i = 0 ; i<N.data_set.size() ; i++)
+	{	
+		int n;
+		
+		if (N.has_missing[i])
+		{
+			double temp = 0.0;
+			n = N.missing_value[i];
+			
+			for (int m = 0 ; m<N.get_nth_node(n).get_nvalues() ; m++)
+			{
+				double cur = 1.0;
+
+				N.data_set[i][n] = N.get_nth_node(n).get_values()[m];
+
+				for (int k = 0 ; k<N.netSize() ; k++)
+				{
+					vector<int> par_values;
+					for (int x = 0 ; x<N.get_nth_node(k).parents_int.size() ; x++)
+					{		
+						int cur = N.get_nth_node(k).parents_int[x];
+						par_values.push_back(value_index_from_data(N,i,cur));
+					}
+	
+					cur *= (fetch_from_CPT(k,value_index_from_data(N,i,k),N,CPT,par_values));
+				}
+				
+				temp += missing[i][m]*cur;
+				
+				N.data_set[i][n] = "\"?\"";		
+			}
+			
+			prob += log(temp);	
+		}   		
+	}
+	
+	return 110000+prob;
 }
 
 

@@ -13,7 +13,7 @@ int main(int argc, char** argv)
 	
 	if (!(argc == 4 or argc == 5))
 	{
-		cout << "./startup_code alarm.bif data.dat {gold.bif}\n";
+		cout << "./startup_code alarm.bif data.dat solved_alarm.bif {gold.bif}\n";
 		exit(0);
 	}
 
@@ -26,8 +26,8 @@ int main(int argc, char** argv)
 // Example: to do something
 	cout<<"Perfect! Hurrah! \n";
 
-	// Graph_Node temp = *Alarm.search_node("\"HRBP\"");
-	// temp.print_node(Alarm);
+	//Graph_Node temp = *Alarm.search_node("\"Alarm\"");
+	//temp.print_node(Alarm);
 
 	// Graph_Node temp = *Alarm.search_node("\"Press\"");
 	// temp.print_node(Alarm);
